@@ -115,6 +115,39 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
     return postfix_expression
 
 
+class node:
+    def __init__(self: "node", value: str) -> None:
+        self.value: str = value
+        self.left: "node | None" = None
+        self.right: "node | None" = None
+        return None
+
+
+class binarytree:
+    def __init__(self: "binarytree") -> None:
+        self.root: node | None = None
+        return None
+
+
+def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> binarytree:
+    helper_stack: list[node] = list()
+
+    for term in postfix_expression:
+        if term.isdigit() or term == "x":
+            helper_stack.append(node(term))
+        else:
+            right = helper_stack.pop()
+            left  = helper_stack.pop()
+            new_term_node = node(term)
+            new_term_node.right = right
+            new_term_node.left = left
+            helper_stack.append(new_term_node)
+
+    arithmetic_tree = binarytree()
+    arithmetic_tree.root = helper_stack[0]
+    return arithmetic_tree
+
+
 def main() -> None:
     print(process_expression_to_postfix(process_expression(process_equation(load_input()))))
     return None
