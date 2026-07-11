@@ -123,6 +123,14 @@ class node:
         return None
 
 
+    def derive(self: "node") -> "node":
+        return node("")
+
+
+    def evaluate(self: "node", value_of_x: float) -> float:
+        return value_of_x
+
+
 class binarytree:
     def __init__(self: "binarytree") -> None:
         self.root: node | None = None
@@ -146,6 +154,32 @@ def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> bina
     arithmetic_tree = binarytree()
     arithmetic_tree.root = helper_stack[0]
     return arithmetic_tree
+
+
+def newton_method(
+        expression_tree: binarytree,
+        approximate_result: float,
+        result_tolerance: float = 1e-7,
+        numerical_zero_tolerance: float = 1e-12,
+        number_of_iteratioins: int = 50) -> float | None:
+
+    arithmetic_tree_root = expression_tree.root
+    derivative_of_root = arithmetic_tree_root.derive()
+    current_x_value = approximate_result
+
+    for _ in range(number_of_iteratioins):
+        fx = arithmetic_tree_root.evaluate(current_x_value)
+        derivative_fx = derivative_of_root.evaluate(current_x_value)
+
+        if abs(fx) < result_tolerance:
+            return current_x_value
+
+        if abs(derivative_fx) < numerical_zero_tolerance:
+            return None
+
+        current_x_value = current_x_value - (fx / derivative_fx)
+
+    return current_x_value
 
 
 def main() -> None:
