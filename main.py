@@ -4,10 +4,8 @@ from abc import ABC, abstractmethod
 from typing import override
 
 """
-second run is assuming the input is correct
 TODO:
 do it in the syntax they use on the job - black
-print statement, co se prave vykonava
 test edge cases
 - 3..1415
 - different variable name
@@ -17,13 +15,13 @@ test properly the 0 - x solution to sin(-x)
 
 tuple_of_functions = ('exp', 'log', 'sin', 'cos')
 
-
 def load_input() -> str:
     equation = input("Insert equation:")
     return equation
 
 
 def process_equation(raw_equation: str) -> str:
+    print("Processing equation...")
     raw_equation = raw_equation.replace(" ", "")
     left_and_right_equation = raw_equation.split("=")
 
@@ -40,6 +38,7 @@ def process_equation(raw_equation: str) -> str:
 
 
 def process_expression(raw_expression: str) -> list[str]:
+    print("Processing expression...")
     global tuple_of_functions
     expression: list[str] = list()
     raw_length = len(raw_expression)
@@ -86,6 +85,7 @@ def process_expression(raw_expression: str) -> list[str]:
 
 
 def process_expression_to_postfix(expression: list[str]) -> list[str]:
+    print("Transforming expression to postfix...")
     global tuple_of_functions
     priority_dictionary = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
     postfix_expression: list[str] = list()
@@ -277,6 +277,7 @@ class binarytree:
 
 
 def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> binarytree:
+    print("Building arithmetic tree...")
     global tuple_of_functions
     helper_stack: list[node] = list()
 
@@ -300,12 +301,13 @@ def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> bina
 
 def newton_method(
         expression_tree: binarytree,
-        approximate_result: float,
         result_tolerance: float = 1e-7,
         numerical_zero_tolerance: float = 1e-12,
         number_of_iterations: int = 50) -> float | None:
 
+    print("Applying Newtons method...")
     arithmetic_tree_root = expression_tree.root
+    approximate_result = float(input("Insert approximate result of the equation:"))
 
     if arithmetic_tree_root is None:
         return approximate_result
@@ -314,14 +316,17 @@ def newton_method(
 
     current_x_value = approximate_result
 
-    for _ in range(number_of_iterations):
+    for iteration in range(number_of_iterations):
         fx = arithmetic_tree_root.evaluate(current_x_value)
         derivative_fx = derivative_of_root.evaluate(current_x_value)
 
         if abs(fx) < result_tolerance:
+            print(f"Solution in tolerance interval was reached. x = {current_x_value}")
+            print(f"Number of iterations: {iteration}")
             return current_x_value
 
         if abs(derivative_fx) < numerical_zero_tolerance:
+            print("Solution was not found in the given tolerance interval.")
             return None
 
         current_x_value = current_x_value - (fx / derivative_fx)
@@ -331,18 +336,11 @@ def newton_method(
 
 def main() -> None:
     raw_equation = load_input()
-    approximate_result = float(input("Insert approximate result:"))
-
     raw_expression = process_equation(raw_equation)
-
     expression = process_expression(raw_expression)
     expression_in_postfix = process_expression_to_postfix(expression)
-
     arithmetic_tree = build_arithmetic_tree_from_expression(expression_in_postfix)
-
-    result = newton_method(arithmetic_tree, approximate_result)
-    print(result)
-
+    _ = newton_method(arithmetic_tree)
     return None
 
 
