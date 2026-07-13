@@ -4,17 +4,19 @@ from abc import ABC, abstractmethod
 from typing import override
 
 """
-first run is assuming the input is correct and coefficients are whole
+second run is assuming the input is correct
 TODO:
-fix the build tree function
-do it in the syntax they use on the job - black?
+do it in the syntax they use on the job - black
 print statement, co se prave vykonava
 test edge cases
-make it work on složené functions
+- 3..1415
+- different variable name
+- ^ has to be constant
 test properly the 0 - x solution to sin(-x)
 """
 
 tuple_of_functions = ('exp', 'log', 'sin', 'cos')
+
 
 def load_input() -> str:
     equation = input("Insert equation:")
@@ -65,7 +67,7 @@ def process_expression(raw_expression: str) -> list[str]:
 
         if character.isdigit():
             starting_index = i
-            while i < raw_length and raw_expression[i].isdigit():
+            while i < raw_length and (raw_expression[i].isdigit() or raw_expression[i] == "."):
                 i += 1
             expression.append(raw_expression[starting_index:i])
             continue
@@ -90,7 +92,7 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
     operator_stack: list[str] = list()
 
     for term in expression:
-        if term.isdigit() or (term.isalpha() and term not in tuple_of_functions):
+        if term.isdigit() or ("." in term) or (term.isalpha() and term not in tuple_of_functions):
             postfix_expression.append(term)
 
         elif term in tuple_of_functions:
@@ -118,6 +120,7 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
         postfix_expression.append(operator_stack.pop())
 
     return postfix_expression
+
 
 class node(ABC):
     @abstractmethod
@@ -190,18 +193,18 @@ class operation_node(node):
         elif self.operation == '-':
             return operation_node('-', self.left.derive(), self.right.derive())
         elif self.operation == '*':
-            part1 = operation_node('*', self.left.derive(), self.right)
-            part2 = operation_node('*', self.left, self.right.derive())
-            return operation_node('+', part1, part2)
+            left_term = operation_node('*', self.left.derive(), self.right)
+            right_term = operation_node('*', self.left, self.right.derive())
+            return operation_node('+', left_term, right_term)
         elif self.operation == '/':
-            part1 = operation_node('*', self.left.derive(), self.right)
-            part2 = operation_node('*', self.left, self.right.derive())
-            numerator = operation_node('-', part1, part2)
+            left_term = operation_node('*', self.left.derive(), self.right)
+            right_term = operation_node('*', self.left, self.right.derive())
+            numerator = operation_node('-', left_term, right_term)
             denominator = operation_node('^', self.right, constant_node(2))
             return operation_node('/', numerator, denominator)
         else:
-            new_exp = operation_node('-', self.right, constant_node(1))
-            power_rule = operation_node('*', self.right, operation_node('^', self.left, new_exp))
+            new_exponent = operation_node('-', self.right, constant_node(1))
+            power_rule = operation_node('*', self.right, operation_node('^', self.left, new_exponent))
             return operation_node('*', power_rule, self.left.derive())
 
     @override
@@ -345,5 +348,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 
