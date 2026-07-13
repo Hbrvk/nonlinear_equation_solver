@@ -14,6 +14,7 @@ make it work on složené functions
 test properly the 0 - x solution to sin(-x)
 """
 
+tuple_of_functions = ('exp', 'log', 'sin', 'cos')
 
 def load_input() -> str:
     equation = input("Insert equation:")
@@ -37,7 +38,7 @@ def process_equation(raw_equation: str) -> str:
 
 
 def process_expression(raw_expression: str) -> list[str]:
-    tuple_of_functions = ('exp', 'log', 'sin', 'cos')
+    global tuple_of_functions
     expression: list[str] = list()
     raw_length = len(raw_expression)
 
@@ -83,21 +84,21 @@ def process_expression(raw_expression: str) -> list[str]:
 
 
 def process_expression_to_postfix(expression: list[str]) -> list[str]:
+    global tuple_of_functions
     priority_dictionary = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
-    functions = ('exp', 'log', 'sin', 'cos')
     postfix_expression: list[str] = list()
     operator_stack: list[str] = list()
 
     for term in expression:
-        if term.isdigit() or (term.isalpha() and term not in functions):
+        if term.isdigit() or (term.isalpha() and term not in tuple_of_functions):
             postfix_expression.append(term)
 
-        elif term in functions:
+        elif term in tuple_of_functions:
             operator_stack.append(term)
 
         elif term in priority_dictionary:
             while len(operator_stack) > 0 and operator_stack[-1] != '(' and \
-                  (operator_stack[-1] in functions or \
+                  (operator_stack[-1] in tuple_of_functions or \
                    priority_dictionary.get(operator_stack[-1], 0) >= priority_dictionary[term]):
                 postfix_expression.append(operator_stack.pop())
             operator_stack.append(term)
@@ -110,7 +111,7 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
                 postfix_expression.append(operator_stack.pop())
             if len(operator_stack) > 0 and operator_stack[-1] == '(':
                 _ = operator_stack.pop()
-            if len(operator_stack) > 0 and operator_stack[-1] in functions:
+            if len(operator_stack) > 0 and operator_stack[-1] in tuple_of_functions:
                 postfix_expression.append(operator_stack.pop())
 
     while len(operator_stack) > 0:
@@ -273,18 +274,21 @@ class binarytree:
 
 
 def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> binarytree:
+    global tuple_of_functions
     helper_stack: list[node] = list()
 
     for term in postfix_expression:
-        if term.isdigit() or term == "x":
-            helper_stack.append(node(term))
+        if term.replace(".", "").isdigit():
+            helper_stack.append(constant_node(float(term)))
+        elif term == "x":
+            helper_stack.append(variable_node())
+        elif term in tuple_of_functions:
+            argument = helper_stack.pop()
+            helper_stack.append(function_node(term, argument))
         else:
             right = helper_stack.pop()
-            left  = helper_stack.pop()
-            new_term_node = node(term)
-            new_term_node.right = right
-            new_term_node.left = left
-            helper_stack.append(new_term_node)
+            left = helper_stack.pop()
+            helper_stack.append(operation_node(term, left, right))
 
     arithmetic_tree = binarytree()
     arithmetic_tree.root = helper_stack[0]
@@ -299,7 +303,12 @@ def newton_method(
         number_of_iteratioins: int = 50) -> float | None:
 
     arithmetic_tree_root = expression_tree.root
-    derivative_of_root = arithmetic_tree_root.derive()
+
+    if arithmetic_tree_root is None:
+        return approximate_result
+    else:
+        derivative_of_root = arithmetic_tree_root.derive()
+
     current_x_value = approximate_result
 
     for _ in range(number_of_iteratioins):
