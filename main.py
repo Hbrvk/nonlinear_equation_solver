@@ -1,9 +1,13 @@
-#import sys
+import math
+
+from abc import ABC, abstractmethod
+from typing import override
 
 """
-first run was assuming the input is correct and numbers are whole
+first run is assuming the input is correct and coefficients are whole
 TODO:
-do it in the syntax they use on the job
+fix the build tree function
+do it in the syntax they use on the job - black?
 print statement, co se prave vykonava
 test edge cases
 make it work on složené functions
@@ -114,21 +118,152 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
 
     return postfix_expression
 
+class node(ABC):
+    @abstractmethod
+    def evaluate(self: "node", value_of_x: float) -> float:
+        raise NotImplementedError
 
-class node:
-    def __init__(self: "node", value: str) -> None:
-        self.value: str = value
-        self.left: "node | None" = None
-        self.right: "node | None" = None
+    @abstractmethod
+    def derive(self: "node") -> "node":
+        raise NotImplementedError
+
+    @abstractmethod
+    def simplify(self: "node") -> "node":
+        return self
+
+
+class constant_node(node):
+    def __init__(self: "constant_node", value: float) -> None:
+        self.value: float = value
         return None
 
+    @override
+    def evaluate(self: "constant_node", value_of_x: float) -> float:
+        return self.value
 
-    def derive(self: "node") -> "node":
-        return node("")
+    @override
+    def derive(self: "constant_node") -> "constant_node":
+        return constant_node(0.0)
+
+    @override
+    def simplify(self: "node") -> "node":
+        return self
 
 
-    def evaluate(self: "node", value_of_x: float) -> float:
+class variable_node(node):
+    @override
+    def evaluate(self: "variable_node", value_of_x: float) -> float:
         return value_of_x
+
+    @override
+    def derive(self: "variable_node") -> constant_node:
+        return constant_node(1)
+
+    @override
+    def simplify(self: "node") -> "node":
+        return self
+
+
+class operation_node(node):
+    def __init__(self: "operation_node", operation: str, left: node, right: node) -> None:
+        self.operation: str = operation
+        self.left: node = left
+        self.right: node = right
+        return None
+
+    @override
+    def evaluate(self: "operation_node", value_of_x: float) -> float:
+        left_value = self.left.evaluate(value_of_x)
+        right_value = self.right.evaluate(value_of_x)
+
+        if self.operation == '+': return left_value + right_value
+        elif self.operation == '-': return left_value - right_value
+        elif self.operation == '*': return left_value * right_value
+        elif self.operation == '/': return left_value / right_value
+        else: return math.pow(left_value, right_value)
+
+    @override
+    def derive(self: "operation_node") -> "operation_node":
+        if self.operation == '+':
+            return operation_node('+', self.left.derive(), self.right.derive())
+        elif self.operation == '-':
+            return operation_node('-', self.left.derive(), self.right.derive())
+        elif self.operation == '*':
+            part1 = operation_node('*', self.left.derive(), self.right)
+            part2 = operation_node('*', self.left, self.right.derive())
+            return operation_node('+', part1, part2)
+        elif self.operation == '/':
+            part1 = operation_node('*', self.left.derive(), self.right)
+            part2 = operation_node('*', self.left, self.right.derive())
+            numerator = operation_node('-', part1, part2)
+            denominator = operation_node('^', self.right, constant_node(2))
+            return operation_node('/', numerator, denominator)
+        else:
+            new_exp = operation_node('-', self.right, constant_node(1))
+            power_rule = operation_node('*', self.right, operation_node('^', self.left, new_exp))
+            return operation_node('*', power_rule, self.left.derive())
+
+    @override
+    def simplify(self: "operation_node") -> node:
+        self.left = self.left.simplify()
+        self.right = self.right.simplify()
+
+        left_value = self.left.value if isinstance(self.left, constant_node) else None
+        right_value = self.right.value if isinstance(self.right, constant_node) else None
+
+        if self.operation == '+':
+            if left_value == 0: return self.right
+            if right_value == 0: return self.left
+        elif self.operation == '-':
+            if right_value == 0: return self.left
+        elif self.operation == '*':
+            if left_value == 0 or right_value == 0: return constant_node(0)
+            if left_value == 1: return self.right
+            if right_value == 1: return self.left
+        elif self.operation == '^':
+            if right_value == 1: return self.left
+            if right_value == 0: return constant_node(1)
+
+        return self
+
+
+class function_node(node):
+    def __init__(self: "function_node", function_name: str, argument: node) -> None:
+        self.funcion_name: str = function_name
+        self.argument: node = argument
+        return None
+
+    @override
+    def evaluate(self: "function_node", value_of_x: float) -> float:
+        value = self.argument.evaluate(value_of_x)
+
+        if self.funcion_name == 'sin': return math.sin(value)
+        elif self.funcion_name == 'cos': return math.cos(value)
+        elif self.funcion_name == 'exp': return math.exp(value)
+        else: return math.log(value)
+
+    @override
+    def derive(self: "function_node") -> operation_node:
+        derivative_of_argument = self.argument.derive()
+
+        if self.funcion_name == 'sin':
+            outer_function = function_node('cos', self.argument)
+            return operation_node('*', outer_function, derivative_of_argument)
+        elif self.funcion_name == 'cos':
+            outer_function = operation_node('-', constant_node(0), function_node('sin', self.argument))
+            return operation_node('*', outer_function, derivative_of_argument)
+        elif self.funcion_name == 'exp':
+            return operation_node('*', function_node('exp', self.argument), derivative_of_argument)
+        else:
+            outer_function = operation_node('/', constant_node(1), self.argument)
+            return operation_node('*', outer_function, derivative_of_argument)
+
+    @override
+    def simplify(self: "function_node") -> node:
+        self.argument = self.argument.simplify()
+        if isinstance(self.argument, constant_node):
+            return constant_node(self.evaluate(0))
+        return self
 
 
 class binarytree:
