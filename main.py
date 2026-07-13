@@ -58,14 +58,14 @@ def process_expression(raw_expression: str) -> list[str]:
 
         if character.isalpha():
             starting_index = i
-            while raw_expression[i].isalpha():
+            while i < raw_length and raw_expression[i].isalpha():
                 i += 1
             expression.append(raw_expression[starting_index:i])
             continue
 
         if character.isdigit():
             starting_index = i
-            while raw_expression[i].isdigit():
+            while i < raw_length and raw_expression[i].isdigit():
                 i += 1
             expression.append(raw_expression[starting_index:i])
             continue
@@ -300,7 +300,7 @@ def newton_method(
         approximate_result: float,
         result_tolerance: float = 1e-7,
         numerical_zero_tolerance: float = 1e-12,
-        number_of_iteratioins: int = 50) -> float | None:
+        number_of_iterations: int = 50) -> float | None:
 
     arithmetic_tree_root = expression_tree.root
 
@@ -311,7 +311,7 @@ def newton_method(
 
     current_x_value = approximate_result
 
-    for _ in range(number_of_iteratioins):
+    for _ in range(number_of_iterations):
         fx = arithmetic_tree_root.evaluate(current_x_value)
         derivative_fx = derivative_of_root.evaluate(current_x_value)
 
@@ -327,7 +327,19 @@ def newton_method(
 
 
 def main() -> None:
-    print(process_expression_to_postfix(process_expression(process_equation(load_input()))))
+    raw_equation = load_input()
+    approximate_result = float(input("Insert approximate result:"))
+
+    raw_expression = process_equation(raw_equation)
+
+    expression = process_expression(raw_expression)
+    expression_in_postfix = process_expression_to_postfix(expression)
+
+    arithmetic_tree = build_arithmetic_tree_from_expression(expression_in_postfix)
+
+    result = newton_method(arithmetic_tree, approximate_result)
+    print(result)
+
     return None
 
 
