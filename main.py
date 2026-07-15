@@ -4,19 +4,18 @@ from abc import ABC, abstractmethod
 from typing import override
 
 """
-TODO:
 do it in the syntax they use on the job - black
 * between ceofficients and variables
 ^ used for constant, exp(.) for variable
 x is the variable
 viable functions: sin, cos, exp, log
 log is natural
-test edge cases
-- + +, ...
-- input unknow string (different function, variable)
+TODO:
+test
 """
 
 tuple_of_functions = ("exp", "log", "sin", "cos")
+
 
 def load_input() -> str:
     equation = input("Insert equation:")
@@ -98,7 +97,7 @@ def process_expression(raw_expression: str) -> list[str]:
 
             selected_term = raw_expression[starting_index:i]
 
-            if selected_term not in tuple_of_functions and selected_term != "x":
+            if (selected_term not in tuple_of_functions) and (selected_term != "x"):
                 raise ValueError(f"Invalid format: Unknown term {selected_term}.")
 
             expression.append(selected_term)
@@ -107,7 +106,9 @@ def process_expression(raw_expression: str) -> list[str]:
         if character.isdigit() or character == ".":
             starting_index = i
             dot_count = 0
-            while i < raw_length and (raw_expression[i].isdigit() or raw_expression[i] == "."):
+            while i < raw_length and (
+                raw_expression[i].isdigit() or raw_expression[i] == "."
+            ):
                 if raw_expression[i] == ".":
                     dot_count += 1
                     if dot_count > 1:
@@ -148,16 +149,26 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
     operator_stack: list[str] = list()
 
     for term in expression:
-        if term.isdigit() or ("." in term) or (term.isalpha() and term not in tuple_of_functions):
+        if (
+            term.isdigit()
+            or ("." in term)
+            or (term.isalpha() and term not in tuple_of_functions)
+        ):
             postfix_expression.append(term)
 
         elif term in tuple_of_functions:
             operator_stack.append(term)
 
         elif term in priority_dictionary:
-            while len(operator_stack) > 0 and operator_stack[-1] != "(" and \
-                  (operator_stack[-1] in tuple_of_functions or \
-                   priority_dictionary.get(operator_stack[-1], 0) >= priority_dictionary[term]):
+            while (
+                len(operator_stack) > 0
+                and operator_stack[-1] != "("
+                and (
+                    operator_stack[-1] in tuple_of_functions
+                    or priority_dictionary.get(operator_stack[-1], 0)
+                    >= priority_dictionary[term]
+                )
+            ):
                 postfix_expression.append(operator_stack.pop())
             operator_stack.append(term)
 
@@ -225,7 +236,9 @@ class variable_node(node):
 
 
 class operation_node(node):
-    def __init__(self: "operation_node", operation: str, left: node, right: node) -> None:
+    def __init__(
+        self: "operation_node", operation: str, left: node, right: node
+    ) -> None:
         self.operation: str = operation
         self.left: node = left
         self.right: node = right
@@ -236,11 +249,16 @@ class operation_node(node):
         left_value = self.left.evaluate(value_of_x)
         right_value = self.right.evaluate(value_of_x)
 
-        if self.operation == "+": return left_value + right_value
-        elif self.operation == "-": return left_value - right_value
-        elif self.operation == "*": return left_value * right_value
-        elif self.operation == "/": return left_value / right_value
-        else: return math.pow(left_value, right_value)
+        if self.operation == "+":
+            return left_value + right_value
+        elif self.operation == "-":
+            return left_value - right_value
+        elif self.operation == "*":
+            return left_value * right_value
+        elif self.operation == "/":
+            return left_value / right_value
+        else:
+            return math.pow(left_value, right_value)
 
     @override
     def derive(self: "operation_node") -> "operation_node":
@@ -260,7 +278,9 @@ class operation_node(node):
             return operation_node("/", numerator, denominator)
         else:
             new_exponent = operation_node("-", self.right, constant_node(1))
-            power_rule = operation_node("*", self.right, operation_node('^', self.left, new_exponent))
+            power_rule = operation_node(
+                "*", self.right, operation_node("^", self.left, new_exponent)
+            )
             return operation_node("*", power_rule, self.left.derive())
 
     @override
@@ -269,20 +289,30 @@ class operation_node(node):
         self.right = self.right.simplify()
 
         left_value = self.left.value if isinstance(self.left, constant_node) else None
-        right_value = self.right.value if isinstance(self.right, constant_node) else None
+        right_value = (
+            self.right.value if isinstance(self.right, constant_node) else None
+        )
 
         if self.operation == "+":
-            if left_value == 0: return self.right
-            if right_value == 0: return self.left
+            if left_value == 0:
+                return self.right
+            if right_value == 0:
+                return self.left
         elif self.operation == "-":
-            if right_value == 0: return self.left
+            if right_value == 0:
+                return self.left
         elif self.operation == "*":
-            if left_value == 0 or right_value == 0: return constant_node(0)
-            if left_value == 1: return self.right
-            if right_value == 1: return self.left
+            if left_value == 0 or right_value == 0:
+                return constant_node(0)
+            if left_value == 1:
+                return self.right
+            if right_value == 1:
+                return self.left
         elif self.operation == "^":
-            if right_value == 1: return self.left
-            if right_value == 0: return constant_node(1)
+            if right_value == 1:
+                return self.left
+            if right_value == 0:
+                return constant_node(1)
 
         return self
 
@@ -297,10 +327,14 @@ class function_node(node):
     def evaluate(self: "function_node", value_of_x: float) -> float:
         value = self.argument.evaluate(value_of_x)
 
-        if self.function_name == "sin": return math.sin(value)
-        elif self.function_name == "cos": return math.cos(value)
-        elif self.function_name == "exp": return math.exp(value)
-        else: return math.log(value)
+        if self.function_name == "sin":
+            return math.sin(value)
+        elif self.function_name == "cos":
+            return math.cos(value)
+        elif self.function_name == "exp":
+            return math.exp(value)
+        else:
+            return math.log(value)
 
     @override
     def derive(self: "function_node") -> operation_node:
@@ -310,10 +344,14 @@ class function_node(node):
             outer_function = function_node("cos", self.argument)
             return operation_node("*", outer_function, derivative_of_argument)
         elif self.function_name == "cos":
-            outer_function = operation_node("-", constant_node(0), function_node("sin", self.argument))
+            outer_function = operation_node(
+                "-", constant_node(0), function_node("sin", self.argument)
+            )
             return operation_node("*", outer_function, derivative_of_argument)
         elif self.function_name == "exp":
-            return operation_node("*", function_node("exp", self.argument), derivative_of_argument)
+            return operation_node(
+                "*", function_node("exp", self.argument), derivative_of_argument
+            )
         else:
             outer_function = operation_node("/", constant_node(1), self.argument)
             return operation_node("*", outer_function, derivative_of_argument)
@@ -356,10 +394,11 @@ def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> bina
 
 
 def newton_method(
-        expression_tree: binarytree,
-        result_tolerance: float = 1e-7,
-        numerical_zero_tolerance: float = 1e-12,
-        number_of_iterations: int = 50) -> float | None:
+    expression_tree: binarytree,
+    result_tolerance: float = 1e-7,
+    numerical_zero_tolerance: float = 1e-12,
+    number_of_iterations: int = 50,
+) -> float | None:
 
     print("Applying Newtons method...")
     arithmetic_tree_root = expression_tree.root
@@ -411,4 +450,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
