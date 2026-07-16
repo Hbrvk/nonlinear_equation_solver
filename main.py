@@ -3,17 +3,6 @@ import math
 from abc import ABC, abstractmethod
 from typing import override
 
-"""
-do it in the syntax they use on the job - black
-* between ceofficients and variables
-^ used for constant, exp(.) for variable
-x is the variable
-viable functions: sin, cos, exp, log
-log is natural
-TODO:
-test
-"""
-
 tuple_of_functions = ("exp", "log", "sin", "cos")
 
 
@@ -127,12 +116,13 @@ def process_expression(raw_expression: str) -> list[str]:
         if character == "+":
             if not expression or expression[-1] == "(":
                 i += 1
+                continue
 
         expression.append(character)
         i += 1
 
     operators = "+-*/^"
-    for i in range(raw_length - 1):
+    for i in range(len(expression) - 1):
         if expression[i] in operators and expression[i + 1] in operators:
             raise ValueError("Invalid format: Oparator positioning.")
         if expression[i] == "(" and expression[i + 1] == ")":
@@ -402,7 +392,15 @@ def newton_method(
 
     print("Applying Newtons method...")
     arithmetic_tree_root = expression_tree.root
-    approximate_result = float(input("Insert approximate result of the equation:"))
+
+    while True:
+        raw_guess = input("Insert approximate result of the equation: ")
+        raw_guess = raw_guess.replace(",", ".")
+        try:
+            approximate_result = float(raw_guess)
+            break
+        except ValueError:
+            print("Invalid input. Enter a valid numerical value.")
 
     if arithmetic_tree_root is None:
         return approximate_result
@@ -416,15 +414,15 @@ def newton_method(
             fx = arithmetic_tree_root.evaluate(current_x_value)
             derivative_fx = derivative_of_root.evaluate(current_x_value)
 
+            if abs(derivative_fx) < numerical_zero_tolerance:
+                print("Solution was not found in the given tolerance interval.")
+                return None
+
             if abs(fx) < result_tolerance:
                 print(f"Solution in tolerance interval was reached.")
                 print(f"x = {current_x_value}")
                 print(f"Number of iterations: {iteration}")
                 return current_x_value
-
-            if abs(derivative_fx) < numerical_zero_tolerance:
-                print("Solution was not found in the given tolerance interval.")
-                return None
 
             current_x_value = current_x_value - (fx / derivative_fx)
 
