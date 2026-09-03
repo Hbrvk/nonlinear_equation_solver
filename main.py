@@ -7,11 +7,29 @@ tuple_of_functions = ("exp", "log", "sin", "cos")
 
 
 def load_input() -> str:
+    """
+    Load mathematical equation as an input.
+
+    Arguments:
+
+    Returns:
+        str: The input as a string.
+    """
     equation = input("Insert equation:")
     return equation
 
 
 def process_equation(raw_equation: str) -> str:
+    """
+    Process the equation to a mathematical expression.
+
+    Arguments:
+        raw_equation (str): A mathematical equation as a string.
+
+    Returns:
+        str: A mathematical expression as a string.
+
+    """
     print("Processing equation...")
     raw_equation = raw_equation.replace(" ", "")
 
@@ -37,6 +55,15 @@ def process_equation(raw_equation: str) -> str:
 
 
 def check_bracketing(raw_expression: str) -> bool:
+    """
+    The bracketing of a mathematical expression is correct.
+
+    Arguments:
+        raw_expression (str): A mathematical equation as a string.
+
+    Returns:
+        bool: The truth value to the statement of the function.
+    """
     symbols = raw_expression.split()
     bracket_stack: list[str] = list()
     bracketing_is_valid = True
@@ -56,6 +83,15 @@ def check_bracketing(raw_expression: str) -> bool:
 
 
 def process_expression(raw_expression: str) -> list[str]:
+    """
+    Process the equation to a list of mathematical terms.
+
+    Arguments:
+        raw_expression (str): A mathematical equation as a string.
+
+    Returns:
+        list[str]: A sequence of mathematical terms the expression represents.
+    """
     print("Processing expression...")
     global tuple_of_functions
 
@@ -65,10 +101,12 @@ def process_expression(raw_expression: str) -> list[str]:
     expression: list[str] = list()
     raw_length = len(raw_expression)
 
+    # Go through the whole raw_expression list and find mathematical expressions.
     i = 0
     while i < raw_length:
         character = raw_expression[i]
 
+        # Find functions
         matched_function = False
         for function in tuple_of_functions:
             if raw_expression.startswith(function, i):
@@ -79,6 +117,7 @@ def process_expression(raw_expression: str) -> list[str]:
         if matched_function == True:
             continue
 
+        # Find variables.
         if character.isalpha():
             starting_index = i
             while i < raw_length and raw_expression[i].isalpha():
@@ -92,6 +131,7 @@ def process_expression(raw_expression: str) -> list[str]:
             expression.append(selected_term)
             continue
 
+        # Find constants.
         if character.isdigit() or character == ".":
             starting_index = i
             dot_count = 0
@@ -106,6 +146,7 @@ def process_expression(raw_expression: str) -> list[str]:
             expression.append(raw_expression[starting_index:i])
             continue
 
+        # Find operators.
         if character == "-":
             if not expression or expression[-1] == "(":
                 expression.append("0")
@@ -132,6 +173,16 @@ def process_expression(raw_expression: str) -> list[str]:
 
 
 def process_expression_to_postfix(expression: list[str]) -> list[str]:
+    """
+    Transforms a sequence of mathematical terms representing an expression
+    into a sequence of mathematical terms representing an expresion in postfix.
+
+    Arguments:
+        expression (list[str]): A sequence of mathematical terms the expression represents.
+
+    Returns:
+        A sequence of mathematical terms representing an expresion in postfix.
+    """
     print("Transforming expression to postfix...")
     global tuple_of_functions
     priority_dictionary = {"+": 1, "-": 1, "*": 2, "/": 2, "^": 3}
@@ -180,55 +231,130 @@ def process_expression_to_postfix(expression: list[str]) -> list[str]:
 
 
 class node(ABC):
+    """A class representing a mathematical term."""
     @abstractmethod
     def evaluate(self: "node", value_of_x: float) -> float:
+        """A placeholder for the function 'evaluate'."""
         raise NotImplementedError
 
     @abstractmethod
     def derive(self: "node") -> "node":
+        """A placeholder for the function 'derive'."""
         raise NotImplementedError
 
     @abstractmethod
     def simplify(self: "node") -> "node":
+        """A placeholder for the function 'simplify'."""
         return self
 
 
 class constant_node(node):
+    """A class representing a constant mathematical term."""
     def __init__(self: "constant_node", value: float) -> None:
+        """
+        Initialize a constant_node.
+
+        Arguments:
+            value (float): The value of the constant.
+
+        Returns:
+        """
         self.value: float = value
         return None
 
     @override
     def evaluate(self: "constant_node", value_of_x: float) -> float:
+        """
+        Evaluating a constant term.
+
+        Arguments:
+            value_of_x (float): Value of the variable.
+
+        Returns:
+            float: Let f: x |-> c. Then f(x) = c for any x.
+        """
         return self.value
 
     @override
     def derive(self: "constant_node") -> "constant_node":
+        """
+        Derive a constant term.
+
+        Arguments:
+
+        Returns:
+            constant_node: Let f: x |-> c. Then f'(x) = 0 for any x.
+        """
         return constant_node(0.0)
 
     @override
     def simplify(self: "node") -> "node":
+        """
+        Simplify a constant term.
+
+        Arguments:
+
+        Returns:
+            self: Can not simplify a constant term.
+        """
         return self
 
 
 class variable_node(node):
+    """A class representing a variable."""
     @override
     def evaluate(self: "variable_node", value_of_x: float) -> float:
+        """
+        Evaluating a variable.
+
+        Arguments:
+            value_of_x (float): Value of the variable.
+
+        Returns:
+            float: Let f: x |-> x. Then f(x) = x for any x.
+        """
         return value_of_x
 
     @override
     def derive(self: "variable_node") -> constant_node:
+        """
+        Derive a variable.
+
+        Arguments:
+
+        Returns:
+            constant_node: Let f: x |-> x. Then f'(x) = 1 for any x.
+        """
         return constant_node(1)
 
     @override
     def simplify(self: "node") -> "node":
+        """
+        Simplify a variable.
+
+        Arguments:
+
+        Returns:
+            self: Can not simplify a variable.
+        """
         return self
 
 
 class operation_node(node):
+    """A class representing an operation."""
     def __init__(
         self: "operation_node", operation: str, left: node, right: node
     ) -> None:
+        """
+        Initialize an operation_node.
+
+        Arguments:
+            operation (str): The operation this node represents.
+            left (node): An operand left of the operator.
+            right (node): An operand right of the operator.
+
+        Returns:
+        """
         self.operation: str = operation
         self.left: node = left
         self.right: node = right
@@ -236,6 +362,16 @@ class operation_node(node):
 
     @override
     def evaluate(self: "operation_node", value_of_x: float) -> float:
+        """
+        Evaluating an operation.
+
+        Arguments:
+            value_of_x (float): Value of the variable.
+
+        Returns:
+            float: Let f: x |-> g(x) (+-/*^) h(x), where g and h are functions of x.
+                   Returns f(value_of_x).
+        """
         left_value = self.left.evaluate(value_of_x)
         right_value = self.right.evaluate(value_of_x)
 
@@ -252,6 +388,15 @@ class operation_node(node):
 
     @override
     def derive(self: "operation_node") -> "operation_node":
+        """
+        Derivative of an operation.
+
+        Arguments:
+
+        Returns:
+            operation_node: Let f: x |-> g(x) (+-/*^) h(x), where g and h are functions of x.
+                   Returns f'(x).
+        """
         if self.operation == "+":
             return operation_node("+", self.left.derive(), self.right.derive())
         elif self.operation == "-":
@@ -275,6 +420,14 @@ class operation_node(node):
 
     @override
     def simplify(self: "operation_node") -> node:
+        """
+        Simplify an operation.
+
+        Arguments:
+
+        Returns:
+            node: Trivial simplification of the operation.
+        """
         self.left = self.left.simplify()
         self.right = self.right.simplify()
 
@@ -308,13 +461,33 @@ class operation_node(node):
 
 
 class function_node(node):
+    """A class representing a function."""
     def __init__(self: "function_node", function_name: str, argument: node) -> None:
+        """
+        Initialize a function_node.
+
+        Arguments:
+            function_name (str): The function this node represents.
+            argument (node): An argument of the function this node represents.
+
+        Returns:
+        """
         self.function_name: str = function_name
         self.argument: node = argument
         return None
 
     @override
     def evaluate(self: "function_node", value_of_x: float) -> float:
+        """
+        Evaluating a function.
+
+        Arguments:
+            value_of_x (float): Value of the variable.
+
+        Returns:
+            float: Let f: x |-> (function_name)(x).
+            Returns f(argument(value_of_x)).
+        """
         value = self.argument.evaluate(value_of_x)
 
         if self.function_name == "sin":
@@ -328,6 +501,15 @@ class function_node(node):
 
     @override
     def derive(self: "function_node") -> operation_node:
+        """
+        Derivative of a function.
+
+        Arguments:
+
+        Returns:
+            operation_node: Let f: x |-> (function_name)(x).
+            Returns f'((argument)(x))*(argument)'(x).
+        """
         derivative_of_argument = self.argument.derive()
 
         if self.function_name == "sin":
@@ -348,6 +530,14 @@ class function_node(node):
 
     @override
     def simplify(self: "function_node") -> node:
+        """
+        Simplify a function.
+
+        Arguments:
+
+        Returns:
+            node: Transforms a function_node to constant_node.
+        """
         self.argument = self.argument.simplify()
         if isinstance(self.argument, constant_node):
             return constant_node(self.evaluate(0))
@@ -355,12 +545,30 @@ class function_node(node):
 
 
 class binarytree:
+    """ A binary tree class."""
     def __init__(self: "binarytree") -> None:
+        """
+        Initialize a binarytree.
+
+        Arguments:
+
+        Returns:
+        """
         self.root: node | None = None
         return None
 
 
 def build_arithmetic_tree_from_expression(postfix_expression: list[str]) -> binarytree:
+    """
+    Transform a postfix sequence of mathematical terms into an arithmetic tree.
+
+    Arguments:
+        postfix_expression (list[str]): A postfix sequence of mathematical terms representing
+                                        an expression.
+
+    Returns:
+        binarytree: Arithmetic tree representing a mathematical expression.
+    """
     print("Building arithmetic tree...")
     global tuple_of_functions
     helper_stack: list[node] = list()
@@ -389,6 +597,22 @@ def newton_method(
     numerical_zero_tolerance: float = 1e-12,
     number_of_iterations: int = 50,
 ) -> float | None:
+    """
+    Applies Newton's method to find the root of a mathematical expression.
+    User inputs an initial guess and iteratively which is refined using the function's
+    derivative to find where the expression evaluates to zero.
+
+    Arguments:
+        expression_tree (binarytree): The binary tree representing the parsed mathematical expression.
+        result_tolerance (float): The acceptable absolute error for the function's calculated root.
+        numerical_zero_tolerance (float): The threshold below which the derivative is considered zero.
+        number_of_iterations (int): The maximum number of iterative refinement steps allowed.
+
+    Returns:
+        float: The approximated root of the arithmetic tree representing an expression.
+        None: If the derivative evaluates to zero, a math domain error occurs, division by
+            zero is encountered, or the solution is not found within the tolerance.
+    """
 
     print("Applying Newtons method...")
     arithmetic_tree_root = expression_tree.root
@@ -437,6 +661,7 @@ def newton_method(
 
 
 def main() -> None:
+    """Code pipeline."""
     raw_equation = load_input()
     raw_expression = process_equation(raw_equation)
     expression = process_expression(raw_expression)
@@ -448,3 +673,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
